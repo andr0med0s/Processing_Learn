@@ -1,3 +1,5 @@
+//------------Робот 4: Мультимедиа
+//стр 104
 PShape bot1;
 PShape bot2;
 PShape bot3;
@@ -8,30 +10,30 @@ float offset = 0;
 
 void setup() {
   size(720, 480);
-  bot1 = loadShape("robot1.svg");
-  bot2 = loadShape("robot2.svg");
-  bot3 = loadShape("robot3.svg");
-  landscape = loadImage("alpine.png");
+  bot1 = loadShape("robots1.svg");
+  bot2 = loadShape("robots1.svg");
+  bot3 = loadShape("robots1.svg");
+  landscape = loadImage("bgc 1.jpg");
 }
 
 void draw() {
-  // Set the background to the "landscape" image, this image
-  // must be the same width and height as the program
+// Устанавливаем изображение "landscape" в качестве фона;
+// это изображение должно иметь размер окна
   background(landscape);
   
-  // Set the left/right offset and apply easing to make
-  // the transition smooth
-  float targetOffset = map(mouseY, 0, height, -40, 40);
+// Устанавливаем сдвиг влево/вправо и применяем технику
+// easing для сглаживания движений
+  float targetOffset = map(mouseY, 0, height, -80, 80);
   offset += (targetOffset - offset) * easing;
   
-  // Draw the left robot
+// Рисуем левого робота
   shape(bot1, 85 + offset, 65);
   
-  // Draw the right robot smaller and give it a smaller offset
+// Рисуем правого робота уменьшенным с небольшим сдвигом
   float smallerOffset = offset * 0.7;
   shape(bot2, 510 + smallerOffset, 140, 78, 248);
   
-  // Draw the smallest robot, give it a smaller offset
+// Рисуем самого мальенького робота, с наименьшим сдвигом
   smallerOffset *= -0.5;
   shape(bot3, 410 + smallerOffset, 225, 39, 124);
 }
