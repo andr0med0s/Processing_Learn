@@ -4,7 +4,7 @@ void setup() {
   size(640, 360);
   // The file "bot1.svg" must be in the data folder
   // of the current sketch to load successfully
-  bot = loadShape("bot1.svg");
+  bot = loadShape("robots1.svg");
 } 
 
 void draw(){
