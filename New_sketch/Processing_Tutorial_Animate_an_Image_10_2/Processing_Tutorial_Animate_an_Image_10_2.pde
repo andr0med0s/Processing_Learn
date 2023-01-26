@@ -46,7 +46,7 @@ void draw () {
     // 1 прямоугольник
     fill(0,0,255);
    float y1 = offset + sin(angle) * scalar;
-   tint(255,random(255),mouseY);
+   //tint(255,random(255),mouseY);
     image(image1, x1 , y1, 500, 500);
     if(x1 > width+500 || x1 < -500){
         direction = direction * -1;
