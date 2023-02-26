@@ -16,9 +16,11 @@ public void setup(){
 
 int D = 50;
 color col;
+int we = 1;
 public void draw(){
   background(230);
   fill(col);
+  strokeWeight(we);
   circle(width/2, height/2, D);
   
 }
