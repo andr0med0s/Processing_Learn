@@ -85,7 +85,7 @@ public void createGUI(){
   slider2.setNumberFormat(G4P.INTEGER, 0);
   slider2.setOpaque(false);
   slider2.addEventHandler(this, "slider2_change1");
-  slider3 = new GSlider(window1, 50, 130, 180, 40, 10.0);
+  slider3 = new GSlider(window1, 50, 130, 180, 50, 10.0);
   slider3.setShowValue(true);
   slider3.setShowLimits(true);
   slider3.setLimits(10, 10, 80);
