@@ -1,7 +1,7 @@
-let tries = 10000; //attempts to place rectangles
+let tries = 10000; //попытки разместить прямоугольники
 let gap = 1; //between rectangles
-let minScale = 0.2; // smallest rectangle
-let skip = 5; // pixels to skip when checking available space
+let minScale = 0.2; // самый маленький прямоугольник
+let skip = 5; // пиксели, которые нужно пропустить при проверке доступного места
 let col, col3, firstCol, n2, sc1, colE, palette1, palette2, palettesArray;
 let noiseTime = 0;
 
@@ -13,14 +13,14 @@ function setup () {
   palettesArray = Object.values (palettes);
   //превращение файла JSON в массив
   palettesLength = palettesArray.length;
-  //cnv = createCanvas(windowWidth-20, windowHeight-70);
+  // cnv = createCanvas(windowWidth-20, windowHeight-70);
   cnv = createCanvas (550, 600);
   cnv.position (0, 30);
   let artButton = createButton ('new art');
   artButton.position (10, 0);
   artButton.mousePressed (newArt);
   let saveButton = createButton ('save jpg');
-  saveButton.position(80, 0);
+  saveButton.position (80, 0);
   saveButton.mousePressed (saveArt);
   rectMode (CENTER);
   newArt ();
@@ -51,14 +51,14 @@ function newArt () {
   let sclType = random (3);
   if (sclType < 0.5) {
     sclStart = random (0.5, 1.0);
-  } else if (sclType < 2.5) {
     //small
+  } else if (sclType < 2.5) {
     sclStart = random (1.1, 2.0); //medium
   } else {
     sclStart = random (2.1, 7.5); //large
   }
-  scl = sclStart / 200 * width;
-  sclReduct = (sclStart / tries) * 1.3;
+  scl = (sclStart / 2000) * width;
+  sclReduct = sclStart / tries * 1.3;
   //вычисление того, насколько уменьшать масштаб при каждой попытке
   palette1 = floor (random (palettesArray.length));
   palette2 = floor (random (palettesArray.length));
@@ -98,24 +98,126 @@ function newArt () {
     if (center1 < 5) {
       a = y1 - y2;
       b = x1 - x2;
-      ang2 = atan(a / b) * ang2random;
+      ang2 = atan (a / b) * ang2random;
     } else {
       ang2 = 0;
     }
     if (center2 < 5) {
       a2 = y1 - y3;
       b2 = x1 - x3;
-      ang3 = atan(a2 / b2) * ang3random;
+      ang3 = atan (a2 / b2) * ang3random;
     } else {
       ang3 = 0;
     }
-    ang = ang1 + ang2 + ang3; 
+    ang = ang1 + ang2 + ang3;
     open = true; //есть место?
     firstCol = null;
     //проверить, есть ли место для этого прямоугольника; сначала проверьте маленькую запись
-    checkRect(x1, y1, h, w, ang);
+    checkRect (x1, y1, h, w, ang);
     if (open == false) {
       continue;
     }
+    // проверьте больший прямоугольник
+    h2 = h + gap * 2;
+    w2 = w + gap * 2;
+    checkRect (x1, y1, h2, w2, ang);
+    if (open == true) {
+      //если есть место, то получите цвет и нарисуйте прямоугольник
+      push ();
+      translate (x1, y1);
+      rotate (ang);
+      convert (firstCol); //преобразовать цвет rgb с холста в цвет hsb
+      firstHSB = hsbCol; //цвет в пространстве в настоящее время
+      getComboColor ();
+      // цвет прямоугольника не может быть того же цвета, что уже есть
+      while (
+        abs (huey - firstHSB[0]) < 15 &&
+        abs (sat - firstHSB[1]) < 20 &&
+        abs (brt - firstHSB[2]) < 20
+      ) {
+        //если это слишком близко, получить новый цвет
+        getComboColor ();
+      }
+      colorMode (HSB, 360, 128, 100, 255);
+      // цвета казались пастельными и размытыми, поэтому я увеличиваю насыщенность и уменьшаю яркость;
+      // также придание оттенку некоторых случайных вариаций
+      fill (
+        huey + random (-10, 10),
+        sat * random (1.1, 1.3),
+        brt * random (0.8, 0.9),
+        255
+      );
+      rect (0, 0, w, h);
+      pop ();
+      colorMode (RGB);
+    }
+    print ('seconds: ' + round ((millis () - timeLapse) / 100) / 10);
   }
+}
+
+function checkRect (x1, y1, h, w, ang) {
+  //сюжетные точки для каждой стороны
+  y2 = y1 - h / 2; //верхняя сторона
+  for (x2 = x1 - w / 2; x2 < x1 + w / 2 + skip; x2 += skip) {
+    //x1 y1 — центр прямоугольника ; x2 y2 — каждая точка края
+    if (open == false) {
+      return;
+    }
+    rotate_point (x2, y2, x1, y1, ang);
+  }
+
+  y2 = y1 + h / 2; //нижняя сторона
+  for (x2 = x1 - w / 2; x2 < x1 + w / 2 + skip; x2 += skip) {
+    if (open == false) {
+      return;
+    }
+    rotate_point (x2, y2, x1, y1, ang);
+  }
+
+  y2 = x1 + w / 2; //правая сторона
+  for (y2 = y1 - h / 2; y2 < y1 + h / 2 + skip; y2 += skip) {
+    if (open == false) {
+      return;
+    }
+    rotate_point (x2, y2, x1, y1, ang);
+  }
+
+  x2 = x1 - w / 2; //левая сторона
+  for (y2 = y1 - h / 2; y2 < y1 + h / 2 + skip; y2 += skip) {
+    if (open == false) {
+      return;
+    }
+    rotate_point (x2, y2, x1, y1, ang);
+  }
+
+  // if (open == false){
+  //   return;
+  // }
+}
+
+function rotate_point (pointX, pointY, originX, originY, angle) {
+  //найдите, где находятся x и y, когда прямоугольник вращается, и проверьте цвет на холсте
+
+  //точка X и Y — боковая точка, начало координат X и Y — центр прямоугольника
+  let xDiff = pointX - originX;
+  let yDiff = pointY - originY;
+  x = cos (angle) * xDiff - sin (angle) * yDiff + originX;
+  y = sin (angle) * xDiff + cos (angle) * yDiff + originY;
+  col = get (x, y); //canvas color
+  if (firstCol == null) {
+    firstCol = col;
+  }
+  // check if this point's color from the canvas is the same as the starting point's color
+  if (
+    abs (col[0] - firstCol[0]) < 5 &&
+    abs (col[1] - firstCol[1]) < 5 &&
+    abs (col[2] - firstCol[2]) < 5
+  ) {
+  } else {
+    open = false;
+  }
+}
+
+function saveArt() {
+  save(Date.now() + ".jpg");
 }
