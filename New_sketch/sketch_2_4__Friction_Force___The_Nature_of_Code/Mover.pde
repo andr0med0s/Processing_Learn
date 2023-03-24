@@ -3,19 +3,23 @@ class Mover {
   PVector velocity;
   PVector acceleration;
 
+  float mass;
+
 
   Mover() {
-    location = new PVector(width/2, height/2);
+    location = new PVector(width/2, 0);
     velocity = new PVector(0, 0);
     acceleration = new PVector(0, 0);
+    //mass = random(0.5, 4);
+    mass = 1;
   }
 
+  //второй закон Ньютона с массой
   void applyForce(PVector force) {
-    //acceleration = force;
-     acceleration.add(force);
+    PVector f = PVector.div(force, mass); // статическая верcия функции div()
+    acceleration.add(f);
   }
 
-  //второй закон Ньютона (начало)
   void update() {
     velocity.add(acceleration);
     location.add(velocity);
@@ -37,16 +41,16 @@ class Mover {
     if (location.y > height) {
       velocity.y *= -1;
       location.y = height;
-  }else if (location.y < 0) {
+    } else if (location.y < 0) {
       velocity.y *= -1;
       location.y = 0;
     }
-}
+  }
 
   void display() {
     stroke(0);
     strokeWeight(2);
     fill(127);
-    ellipse(location.x, location.y, 48, 48);
+    ellipse(location.x, location.y, mass*20, mass*20);
   }
 }
