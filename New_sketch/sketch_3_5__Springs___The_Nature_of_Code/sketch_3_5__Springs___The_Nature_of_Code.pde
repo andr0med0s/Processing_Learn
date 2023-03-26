@@ -28,7 +28,7 @@ void draw() {
   }
   
   PVector gravity = new PVector(0, 0.1);
-  bob.applyForce(gravity);
+  bob.applyForce(gravity );
   
   bob.update();
   bob.display();
