@@ -1,4 +1,4 @@
-//Particle p;
+ //Particle p;
 ArrayList<Particle> particles;
 
 void setup() {
@@ -14,7 +14,8 @@ void setup() {
 void draw() {
   background(255);
   particles.add(new Particle(new PVector(width/2, 20)));
-  //for (Particle p : particles) {
+  //for (Particle p : particles) {       //Поскольку мы не удаляем элементы, мы можем
+                                        //используйте наш расширенный цикл
   //  p.update();
   //  p.display();
   //}
