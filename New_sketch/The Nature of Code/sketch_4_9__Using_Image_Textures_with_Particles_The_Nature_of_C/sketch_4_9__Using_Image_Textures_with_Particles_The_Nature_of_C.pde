@@ -12,13 +12,14 @@
 ParticleSystem ps;
 
 void setup() {
-  size(640,360);
-  PImage img = loadImage("texture.png");
+  size(640,360,P2D);
+  PImage img = loadImage("colorful.png");
   ps = new ParticleSystem(0,new PVector(width/2,height-75),img);
 }
 
 void draw() {
   background(0);
+  blendMode(ADD);
   
   // Calculate a "wind" force based on mouse horizontal position
   float dx = map(mouseX,0,width,-0.2,0.2);

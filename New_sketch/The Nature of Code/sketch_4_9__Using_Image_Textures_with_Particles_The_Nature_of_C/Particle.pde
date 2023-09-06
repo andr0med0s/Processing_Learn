@@ -42,7 +42,7 @@ class Particle {
   void render() {
     imageMode(CENTER);
     tint(255,lifespan);
-    image(img,pos.x,pos.y);
+    image(img,pos.x,pos.y,200,200);
     // Drawing a circle instead
     // fill(255,lifespan);
     // noStroke();
