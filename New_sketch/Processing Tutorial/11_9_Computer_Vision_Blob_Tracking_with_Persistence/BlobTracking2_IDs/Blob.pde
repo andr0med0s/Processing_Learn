@@ -7,6 +7,10 @@ class Blob {
 
   ArrayList<PVector> points;
 
+  int id = 0; // id двоичных объектов
+
+  boolean taken = false; // сопоставление
+
   Blob(float x, float y) {
     minx = x;
     miny = y;
@@ -16,23 +20,26 @@ class Blob {
     points.add(new PVector(x, y));
   }
 
-  void show(int num) {
+  // void show(int num) {
+  void show() {
     stroke(0);
     fill(255);
     strokeWeight(2);
     rectMode(CORNERS);
     rect(minx, miny, maxx, maxy);
-/*
-    // for (PVector v : points) {
-    //   stroke(0, 0, 255);
-    //   point(v.x, v.y);
-    // }
-*/
-///-----------на этом приостановился 2-37 тайминг видео нет доступа к камере
+  /*
+      // for (PVector v : points) {
+      //   stroke(0, 0, 255);
+      //   point(v.x, v.y);
+      // }
+  */
+
   textAlign(CENTER);
   textSize(64);
   fill(0);
-  text(num, minx + (maxx - minx) *0.5, miny + (maxy - miny) *0.5);
+  // text(num, minx + (maxx - minx) *0.5, miny + (maxy - miny) *0.5);
+  // text(num, minx + (maxx - minx) *0.5, maxy - 10);
+  text(id, minx + (maxx - minx) *0.5, maxy - 10);
 
   }
 
@@ -44,8 +51,21 @@ class Blob {
     maxy = max(maxy, y);
   }
 
+void become(Blob other) {
+  minx = other.minx;
+  maxx = other.maxx;
+  miny = other.miny;
+  maxy = other.maxy;
+}
+
   float size() {
     return (maxx-minx)*(maxy-miny);
+  }
+
+  PVector getCenter() {
+    float  x = (maxx - minx) * 0.5 + minx;
+    float  y = (maxy - miny) * 0.5 + miny;
+    return new PVector(x,y);
   }
 
   boolean isNear(float x, float y) {
