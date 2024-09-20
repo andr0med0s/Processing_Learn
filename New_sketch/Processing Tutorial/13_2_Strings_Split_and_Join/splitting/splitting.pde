@@ -2,7 +2,7 @@ size(600, 400);
 background(0);
 String s = "100,90,32,7,87";
 
-String[] nums = split(s, ",");
+String[] nums = split(s, ","); //запятая указана в качестве разделителя
 
 int[] vals = int(nums); // преобразование типа
 
