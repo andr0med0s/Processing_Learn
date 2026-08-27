@@ -21,11 +21,14 @@ class TerminalView {
   // 0 = 30m/15m/5m, 1 = 4h/1h/30m
   public int timeframeMode = 0;
 
+  // Управление статусом копирования
   public String cpBtnText = "Копировать ответ";
+  public int copyTimestamp = 0; // Время, когда кнопка была нажата
 
   public final float tfToggleX = 30, tfToggleY = 78, tfToggleW = 540, tfToggleH = 28;
   public final float aiBtnX = 30, aiBtnY = 320, aiBtnW = 160, aiBtnH = 32;
   public final float cpBtnX = 210, cpBtnY = 320, cpBtnW = 160, cpBtnH = 32;
+  public final float refreshBtnX = 400, refreshBtnY = 320, refreshBtnW = 160, refreshBtnH = 32;
 
   public TerminalView(PApplet app, TInvestClient broker, LocalAIClient ai) {
     this.app = app;
@@ -85,17 +88,44 @@ class TerminalView {
     app.textSize(13); app.fill(140);
     app.text("Нажмите ESC или BACKSPACE для возврата к поиску", 30, 65);
 
+        // === ДОБАВЛЕНИЕ ДАТЫ И ВРЕМЕНИ ДЛЯ СКРИНШОТОВ ===
+    app.fill(0, 140, 200); // Красивый приглушенный сине-бирюзовый цвет
+    app.textSize(12);
+    app.textAlign(RIGHT, BASELINE); // Выравниваем текст по правому краю экрана
+    
+    // Форматируем дату и время с ведущими нулями (чтобы вместо 9:5 было 09:05)
+    String timestamp = app.nf(day(), 2) + "." + app.nf(month(), 2) + "." + year() + " | " 
+                     + app.nf(hour(), 2) + ":" + app.nf(minute(), 2) + ":" + app.nf(second(), 2);
+                     
+    app.text(timestamp, app.width - 30, 65); // Выводим с отступом 30px от правого края Сместили на Y=65
+    app.textAlign(LEFT, BASELINE); // ОБЯЗАТЕЛЬНО возвращаем выравнивание по левому краю для остального интерфейса
+
+
     drawTimeframeToggle();
 
     app.stroke(60);
     app.line(30, 115, app.width - 30, 115);
     app.line(30, 155, app.width - 30, 155);
 
-    app.fill(0, 160, 255); app.textSize(14);
-    app.text("Таймфрейм", 45, 140);
-    app.text("Stoch %K / %D", 170, 140);
-    app.text("Дистанция EMA 200", 310, 140);
-    app.text("Сигналы Mean Reversion", 460, 140);
+    // === ОПТИМИЗИРОВАННАЯ ДВУХСТРОЧНАЯ ШАПКА ТАБЛИЦЫ ===
+    app.textSize(13);
+    
+    // Первая строка (Главные категории) — яркий акцентный цвет
+    app.fill(0, 160, 255); 
+    app.text("Таймфрейм", 45, 132);
+    app.text("Stochastic", 170, 132);
+    app.text("Дистанция", 310, 132);
+    app.text("Стратегия", 460, 132);
+
+    // Вторая строка (Спецификации и подписи) — приглушенный серый цвет
+    app.fill(130, 145, 165); 
+    app.textSize(11); // Чуть уменьшаем размер для подстроки
+    app.text("(Интервал)", 45, 148);
+    app.text("Lines %K / %D", 170, 148);
+    app.text("до EMA 200", 310, 148);
+    app.text("Mean Reversion", 460, 148);
+
+    app.textSize(14); // Возвращаем исходный размер для строк с данными
 
     if (!isAllDataLoaded()) {
       app.fill(255, 204, 0); app.textSize(15);
@@ -119,12 +149,30 @@ class TerminalView {
     app.text(ai.isThinking ? "Анализ..." : "Робот-Аналитик", aiBtnX + aiBtnW/2, aiBtnY + aiBtnH/2 - 1);
 
     // Кнопка Копирования
+
+    // === АВТОСБРОС ТЕКСТА КНОПКИ КОПИРОВАНИЯ ===
+    // Если текст равен "Скопировано!" и прошло больше 2500 миллисекунд (2.5 секунды)
+    if (cpBtnText.equals("Скопировано!") && app.millis() - copyTimestamp > 2500) {
+      cpBtnText = "Копировать ответ";
+    }
+
+    // Кнопка Копирования 
     boolean isCpHovered = app.mouseX >= cpBtnX && app.mouseX <= cpBtnX + cpBtnW && app.mouseY >= cpBtnY && app.mouseY <= cpBtnY + cpBtnH;
     app.fill(isCpHovered ? app.color(75, 85, 100) : app.color(50, 60, 75));
     app.stroke(isCpHovered ? app.color(110, 125, 145) : app.color(80, 95, 110));
     app.rect(cpBtnX, cpBtnY, cpBtnW, cpBtnH, 5);
     app.fill(240); app.textSize(12);
     app.text(cpBtnText, cpBtnX + cpBtnW/2, cpBtnY + cpBtnH/2 - 1);
+    app.textAlign(LEFT, BASELINE);
+
+    // Кнопка Обновления данных из T-Invest API
+    boolean isRefreshHovered =  app.mouseX >= refreshBtnX && app.mouseX <= refreshBtnX + refreshBtnW && 
+                                app.mouseY >= refreshBtnY && app.mouseY <= refreshBtnY + refreshBtnH;
+    app.fill(isRefreshHovered ? app.color(100, 100, 100) : app.color(70, 70, 70));
+    app.rect(refreshBtnX, refreshBtnY, refreshBtnW, refreshBtnH, 5);
+    app.fill(255);
+    app.textAlign(CENTER, CENTER);
+    app.text("Обновить данные", refreshBtnX + refreshBtnW/2, refreshBtnY + refreshBtnH/2);
     app.textAlign(LEFT, BASELINE);
 
     // Поле ответа ИИ
@@ -153,17 +201,35 @@ class TerminalView {
       return;
     }
 
-    // Вывод Стохастика
+    //1 Вывод Стохастика
     app.fill(240);
-    String stochText = app.nf(stoch.k, 1, 1) + " / " + app.nf(stoch.d, 1, 1);
-    app.text(stochText, 170, y);
+    String stochValues = app.nf(stoch.k, 1, 1) + " / " + app.nf(stoch.d, 1, 1);
+    app.text(stochValues, 170, y);
 
-    // Вывод параметров отклонения цены от EMA 200
+    // 2. Отрисовка стрелочки импульса Стохастика на основе пересечения линий K и D
+    // Вычисляем ширину напечатанного текста, чтобы поставить стрелку ровно после цифр
+    float textW = app.textWidth(stochValues); 
+    float arrowX = 170 + textW + 8; // Смещение вправо от текста на 8 пикселей
+    
+    app.textSize(12); // Чуть уменьшим размер для аккуратности стрелки
+    if (stoch.k > stoch.d + 0.5f) {
+      app.fill(0, 255, 150); // Зеленый цвет для бычьего импульса
+      app.text("▲", arrowX, y);
+    } else if (stoch.k < stoch.d - 0.5f) {
+      app.fill(255, 50, 50); // Красный цвет для медвежьего импульса
+      app.text("▼", arrowX, y);
+    } else {
+      app.fill(150); // Серый цвет, если линии сплетены (флэт)
+      app.text("◆", arrowX, y); // Квадрат/ромб как символ нейтрального положения
+    }
+    app.textSize(14); // Возвращаем стандартный размер шрифта для следующих колонок
+
+    //3 Вывод параметров отклонения цены от EMA 200
     String prefix = ema.distancePercent >= 0 ? "+" : "";
     app.fill(ema.distancePercent >= 0 ? app.color(255, 100, 100) : app.color(100, 255, 100));
     app.text(prefix + app.nf(ema.distancePercent, 1, 2) + "% (" + ema.trendDirection + ")", 310, y);
 
-    // Логика визуального Mean Reversion сигнала для трейдера
+    //4 Логика визуального Mean Reversion сигнала для трейдера
     if (stoch.k <= 20 && ema.distancePercent < -1.5f) {
       app.fill(0, 255, 150);
       app.text("BUY (Возврат вверх)", 460, y);

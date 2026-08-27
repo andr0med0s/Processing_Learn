@@ -59,18 +59,29 @@ class UIController {
           }
         }
       }
-      // Клик по кнопке "Копировать ответ"
+      // Клик по кнопке "Копировать ответ" (ОБНОВЛЕННЫЙ ВАРИАНТ)
       else if (mx >= ui.cpBtnX && mx <= ui.cpBtnX + ui.cpBtnW && my >= ui.cpBtnY && my <= ui.cpBtnY + ui.cpBtnH) {
         try {
           StringSelection selection = new StringSelection(ai.aiResponse);
           Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
-          ui.cpBtnText = "Скорировано!";
+          
+          // Фиксируем статус и текущее время в миллисекундах
+          ui.cpBtnText = "Скопировано!";
+          ui.copyTimestamp = app.millis(); // <--- ВОТ ЭТА СТРОЧКА ДОБАВИЛАСЬ
         }
         catch (Exception e) {
           System.out.println("Ошибка буфера: " + e.getMessage());
         }
       }
     }
+    // Клик по кнопке "Обновить данные"
+    if (mx >= ui.refreshBtnX && mx <= ui.refreshBtnX + ui.refreshBtnW && 
+        my >= ui.refreshBtnY && my <= ui.refreshBtnY + ui.refreshBtnH) {
+      // Сбрасываем старые данные, чтобы пользователь видел статус загрузки
+      ui.tf4h = null; ui.tf1h = null; ui.tf30m = null; ui.tf15m = null; ui.tf5m = null;
+      app.thread("runAnalyticCalculation"); // Запускаем асинхронный пересчет индикаторов
+    }
+
   }
 
   public void handleKeyPress(char keyChar, int keyCode) {
