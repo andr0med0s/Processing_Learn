@@ -25,6 +25,9 @@ class TerminalView {
   public String cpBtnText = "Копировать ответ";
   public int copyTimestamp = 0; // Время, когда кнопка была нажата
 
+  public String aiAnalysisTime = ""; // Штамп времени для анализа ИИ
+
+
   public final float tfToggleX = 30, tfToggleY = 78, tfToggleW = 540, tfToggleH = 28;
   public final float aiBtnX = 30, aiBtnY = 320, aiBtnW = 160, aiBtnH = 32;
   public final float cpBtnX = 210, cpBtnY = 320, cpBtnW = 160, cpBtnH = 32;
@@ -175,9 +178,18 @@ class TerminalView {
     app.text("Обновить данные", refreshBtnX + refreshBtnW/2, refreshBtnY + refreshBtnH/2);
     app.textAlign(LEFT, BASELINE);
 
-    // Поле ответа ИИ
-    app.fill(225); app.textSize(13);
-    app.text(ai.aiResponse, 30, 370, app.width - 60, 340);
+    // Отрисовка штампа времени ИИ (если запрос уже делался)
+    if (aiAnalysisTime.length() > 0) {
+      app.fill(100, 150, 165); // Мягкий технологичный цвет
+      app.textSize(11);
+      app.text(aiAnalysisTime, 30, 362); // Выводим чуть выше основного текста ИИ
+    }
+
+    // Поле ответа ИИ (ваш стандартный код вывода)
+    app.fill(225); 
+    app.textSize(13);
+    app.text(ai.aiResponse, 30, 380, app.width - 60, 330); // Сместили текст на Y=380, чтобы дать место штампу
+  
   }
 
   private void drawTimeframeToggle() {

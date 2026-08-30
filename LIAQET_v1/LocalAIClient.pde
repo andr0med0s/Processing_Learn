@@ -109,14 +109,36 @@ class LocalAIClient {
               JSONObject firstChoice = choices.getJSONObject(0);
               if (firstChoice != null && !firstChoice.isNull("message")) {
                 JSONObject message = firstChoice.getJSONObject("message");
-                String content = message.getString("content", "").trim();
                 
-                if (content.startsWith("\"") && content.endsWith("\"") && content.length() > 1) {
-                  content = content.substring(1, content.length() - 1).trim();
+                // 1. Пытаемся взять основной чистовой ответ
+                String content = message.hasKey("content") ? message.getString("content", "").trim() : "";
+                
+                // 2. Пытаемся взять внутренние глубокие рассуждения ИИ (если они есть)
+                String reasoning = message.hasKey("reasoning_content") ? message.getString("reasoning_content", "").trim() : "";
+                
+                String finalOutput = "";
+                
+                if (!content.isEmpty()) {
+                  // Если есть чистовик — берем его
+                  finalOutput = content;
+                  System.out.println("[УСПЕХ ИИ] Получен стандартный ответ из поля content.");
+                } else if (!reasoning.isEmpty()) {
+                  // Если чистовик пуст, но ИИ расписал логику в рассуждениях — спасаем эти данные!
+                  finalOutput = reasoning;
+                  System.out.println("[УСПЕХ ИИ] Поле content пустое. Успешно перехвачен черновик reasoning_content!");
                 }
                 
-                aiResponse = content;
-                System.out.println("[УСПЕХ ИИ] Анализ Mean Reversion успешно выведен.");
+                if (!finalOutput.isEmpty()) {
+                  // Мягкая очистка от внешних кавычек
+                  if (finalOutput.startsWith("\"") && finalOutput.endsWith("\"") && finalOutput.length() > 1) {
+                    finalOutput = finalOutput.substring(1, finalOutput.length() - 1).trim();
+                  }
+                  
+                  // Передаем итоговый текст в интерфейс терминала
+                  aiResponse = finalOutput;
+                } else {
+                  aiResponse = "Предупреждение: ИИ выполнил расчет, но вернул пустые поля ответов. Попробуйте еще раз.";
+                }
               }
             }
           }

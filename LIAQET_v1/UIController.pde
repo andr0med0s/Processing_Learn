@@ -45,6 +45,10 @@ class UIController {
         if (!ai.isThinking) {
           ui.cpBtnText = "Копировать ответ";
           
+          // Фиксируем точное время отправки запроса к ИИ
+          ui.aiAnalysisTime = "Расчет ИИ от: " + app.nf(app.day(), 2) + "." + app.nf(app.month(), 2) + "." + app.year() + " в " 
+                            + app.nf(app.hour(), 2) + ":" + app.nf(app.minute(), 2) + ":" + app.nf(app.second(), 2);
+
           // Теперь передаем ИИ пары: Стохастик + EMA для каждого таймфрейма
           if (ui.timeframeMode == 0) {
             ai.analyzeDataAsync(app, ui.selectedAsset.name, ui.selectedAsset.ticker, "скальпинг 30м / 15м / 5м",
