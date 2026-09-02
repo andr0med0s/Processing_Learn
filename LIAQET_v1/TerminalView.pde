@@ -8,14 +8,21 @@ class TerminalView {
   private TInvestClient broker;
   private LocalAIClient ai;
 
+  // КОНСТАНТЫ  ЭКРАНОВ
+  public static final int SCREEN_FAVORITES = 0; //  стартовое окно!
+  public static final int SCREEN_SEARCH = 1;
+  public static final int SCREEN_ANALYTICS = 2;
+
   private String inputBuffer = "";
-  public int currentScreen = 0;
+  public int currentScreen = SCREEN_FAVORITES; // По умолчанию открываем Избранное
 
   public InstrumentItem selectedAsset = null;
+  public FavoritesManager favManager; //  JSON менеджер
+
   
   // Данные Стохастика
   public StochasticResult tf4h, tf1h, tf30m, tf15m, tf5m;
-  // Новые данные EMA
+  // Данные EMA
   public EmaResult tf4hEma, tf1hEma, tf30mEma, tf15mEma, tf5mEma;
 
   // 0 = 30m/15m/5m, 1 = 4h/1h/30m
@@ -37,6 +44,7 @@ class TerminalView {
     this.app = app;
     this.broker = broker;
     this.ai = ai;
+    this.favManager = new FavoritesManager(app); // Инициализируем менеджер
   }
 
   public String getInputText() { return inputBuffer; }
@@ -53,20 +61,66 @@ class TerminalView {
   }
 
   public void drawScreen() {
-    if (currentScreen == 0) drawSearchLayout();
-    else drawTableLayout();
+    switch (currentScreen) {
+      case SCREEN_FAVORITES:
+        drawFavoritesLayout();
+        break;
+      case SCREEN_SEARCH:
+        drawSearchLayout();
+        break;
+      case SCREEN_ANALYTICS:
+        drawTableLayout();
+        break;
+    }
   }
+
+  private void drawFavoritesLayout() {
+    app.fill(255); app.textSize(18);
+    app.text("Избранные инструменты", 25, 40);
+    app.textSize(13); app.fill(140);
+    app.text("Нажмите клавишу 'S' для быстрого открытия окна поиска", 25, 65);
+
+    // Кнопка перехода к поиску
+    float btnX = 25, btnY = 85, btnW = app.width - 50, btnH = 40;
+    boolean hoverSearch = (app.mouseX > btnX && app.mouseX < btnX + btnW && app.mouseY > btnY && app.mouseY < btnY + btnH);
+    app.fill(hoverSearch ? 45 : 33);
+    app.stroke(hoverSearch ? app.color(0, 150, 255) : 80);
+    app.rect(btnX, btnY, btnW, btnH, 6);
+    app.fill(200); app.textSize(14); app.textAlign(CENTER, CENTER);
+    app.text("+ Найти новый инструмент по тикеру", btnX + btnW/2, btnY + btnH/2);
+    app.textAlign(LEFT, BASELINE);
+
+    // Отрисовка списка избранного
+    if (favManager.list.isEmpty()) {
+      app.fill(130); app.textSize(14);
+      app.text("Список избранного пуст. Добавьте тикеры через поиск.", 25, 170);
+    } else {
+      int startY = 150;
+      for (int i = 0; i < favManager.list.size(); i++) {
+        InstrumentItem item = favManager.list.get(i);
+        item.updatePosition(25, startY + (i * 75), app.width - 50, 65);
+        item.drawItem(app);
+        
+        // Рисуем маленькую иконку удаления (крестик) в углу карточки инструмента
+        app.fill(180, 50, 50); app.textSize(12);
+        app.text("[Удалить]", item.x + item.w - 80, item.y + 27);
+      }
+    }
+  }
+
 
   private void drawSearchLayout() {
     app.fill(255); app.textSize(16);
     app.text("Поиск тикера (T-Invest API Песочница):", 25, 40);
+    app.textSize(12); app.fill(140);
+    app.text("Нажмите ESC для возврата к избранному", 25, 120);
 
     app.noFill();
     app.stroke(broker.isSearching ? app.color(255, 204, 0) : 100);
     app.strokeWeight(1.5);
     app.rect(25, 55, app.width - 50, 42, 6);
 
-    app.fill(255);
+    app.fill(255); app.textSize(14);
     String cursor = (app.frameCount / 15 % 2 == 0 && !broker.isSearching) ? "|" : "";
     app.text(inputBuffer + cursor, 38, 82);
 
@@ -91,18 +145,27 @@ class TerminalView {
     app.textSize(13); app.fill(140);
     app.text("Нажмите ESC или BACKSPACE для возврата к поиску", 30, 65);
 
-        // === ДОБАВЛЕНИЕ ДАТЫ И ВРЕМЕНИ ДЛЯ СКРИНШОТОВ ===
-    app.fill(0, 140, 200); // Красивый приглушенный сине-бирюзовый цвет
-    app.textSize(12);
-    app.textAlign(RIGHT, BASELINE); // Выравниваем текст по правому краю экрана
-    
+    // Добавляем кнопку «В избранное» на экран Аналитики
+    // Динамическая кнопка Избранного (Звезда)
+    float favBtnX = app.width - 150, favBtnY = 23, favBtnW = 120, favBtnH = 24;
+    boolean isFav = favManager.contains(selectedAsset.uid);
+    boolean hoverFav = (app.mouseX > favBtnX && app.mouseX < favBtnX + favBtnW && app.mouseY > favBtnY && app.mouseY < favBtnY + favBtnH);
+
+    app.fill(hoverFav ? (isFav ? app.color(150,50,50) : app.color(50,150,50)) : (isFav ? app.color(100,33,33) : app.color(33,100,33)));
+    app.stroke(isFav ? app.color(255,100,100) : app.color(100,255,100));
+    app.rect(favBtnX, favBtnY, favBtnW, favBtnH, 4);
+    app.fill(255); app.textSize(11); app.textAlign(CENTER, CENTER);
+    app.text(isFav ? " [+] В избранном" : "[-] Добавить", favBtnX + favBtnW/2, favBtnY + favBtnH/2);
+    app.textAlign(LEFT, BASELINE);
+
+
+    //  Таймштамп отрисовки интерфейса
+    app.fill(0, 140, 200); app.textSize(12); app.textAlign(RIGHT, BASELINE); 
     // Форматируем дату и время с ведущими нулями (чтобы вместо 9:5 было 09:05)
     String timestamp = app.nf(day(), 2) + "." + app.nf(month(), 2) + "." + year() + " | " 
                      + app.nf(hour(), 2) + ":" + app.nf(minute(), 2) + ":" + app.nf(second(), 2);
-                     
-    app.text(timestamp, app.width - 30, 65); // Выводим с отступом 30px от правого края Сместили на Y=65
-    app.textAlign(LEFT, BASELINE); // ОБЯЗАТЕЛЬНО возвращаем выравнивание по левому краю для остального интерфейса
-
+    app.text(timestamp, app.width - 30, 65);
+    app.textAlign(LEFT, BASELINE); 
 
     drawTimeframeToggle();
 
@@ -111,18 +174,14 @@ class TerminalView {
     app.line(30, 155, app.width - 30, 155);
 
     // === ОПТИМИЗИРОВАННАЯ ДВУХСТРОЧНАЯ ШАПКА ТАБЛИЦЫ ===
-    app.textSize(13);
-    
-    // Первая строка (Главные категории) — яркий акцентный цвет
-    app.fill(0, 160, 255); 
+    app.textSize(13); app.fill(0, 160, 255); 
     app.text("Таймфрейм", 45, 132);
     app.text("Stochastic", 170, 132);
     app.text("Дистанция", 310, 132);
     app.text("Стратегия", 460, 132);
 
-    // Вторая строка (Спецификации и подписи) — приглушенный серый цвет
-    app.fill(130, 145, 165); 
-    app.textSize(11); // Чуть уменьшаем размер для подстроки
+    // Вторая строка (Спецификации и подписи) 
+    app.fill(130, 145, 165); app.textSize(11); 
     app.text("(Интервал)", 45, 148);
     app.text("Lines %K / %D", 170, 148);
     app.text("до EMA 200", 310, 148);
@@ -151,10 +210,7 @@ class TerminalView {
     app.fill(255); app.textSize(13); app.textAlign(CENTER, CENTER);
     app.text(ai.isThinking ? "Анализ..." : "Робот-Аналитик", aiBtnX + aiBtnW/2, aiBtnY + aiBtnH/2 - 1);
 
-    // Кнопка Копирования
-
-    // === АВТОСБРОС ТЕКСТА КНОПКИ КОПИРОВАНИЯ ===
-    // Если текст равен "Скопировано!" и прошло больше 2500 миллисекунд (2.5 секунды)
+    // Кнопка Копирования  === АВТОСБРОС ТЕКСТА КНОПКИ КОПИРОВАНИЯ ===
     if (cpBtnText.equals("Скопировано!") && app.millis() - copyTimestamp > 2500) {
       cpBtnText = "Копировать ответ";
     }
@@ -168,28 +224,24 @@ class TerminalView {
     app.text(cpBtnText, cpBtnX + cpBtnW/2, cpBtnY + cpBtnH/2 - 1);
     app.textAlign(LEFT, BASELINE);
 
-    // Кнопка Обновления данных из T-Invest API
+    // Кнопка Обновления данных 
     boolean isRefreshHovered =  app.mouseX >= refreshBtnX && app.mouseX <= refreshBtnX + refreshBtnW && 
                                 app.mouseY >= refreshBtnY && app.mouseY <= refreshBtnY + refreshBtnH;
     app.fill(isRefreshHovered ? app.color(100, 100, 100) : app.color(70, 70, 70));
     app.rect(refreshBtnX, refreshBtnY, refreshBtnW, refreshBtnH, 5);
-    app.fill(255);
-    app.textAlign(CENTER, CENTER);
+    app.fill(255); app.textAlign(CENTER, CENTER);
     app.text("Обновить данные", refreshBtnX + refreshBtnW/2, refreshBtnY + refreshBtnH/2);
     app.textAlign(LEFT, BASELINE);
 
     // Отрисовка штампа времени ИИ (если запрос уже делался)
     if (aiAnalysisTime.length() > 0) {
-      app.fill(100, 150, 165); // Мягкий технологичный цвет
-      app.textSize(11);
+      app.fill(100, 150, 165); app.textSize(11);
       app.text(aiAnalysisTime, 30, 362); // Выводим чуть выше основного текста ИИ
     }
 
     // Поле ответа ИИ (ваш стандартный код вывода)
-    app.fill(225); 
-    app.textSize(13);
-    app.text(ai.aiResponse, 30, 380, app.width - 60, 330); // Сместили текст на Y=380, чтобы дать место штампу
-  
+    app.fill(225); app.textSize(13);
+    app.text(ai.aiResponse, 30, 380, app.width - 60, 330); 
   }
 
   private void drawTimeframeToggle() {
@@ -204,8 +256,7 @@ class TerminalView {
 
   // Обновленная строка вывода с поддержкой комплексной Mean Reversion оценки
   private void renderRow(String title, StochasticResult stoch, EmaResult ema, float y) {
-    app.fill(255); app.textSize(14);
-    app.text(title, 45, y);
+    app.fill(255); app.textSize(14); app.text(title, 45, y);
     
     if (stoch.isError || ema.isError) {
       app.fill(255, 70, 70);
@@ -219,11 +270,9 @@ class TerminalView {
     app.text(stochValues, 170, y);
 
     // 2. Отрисовка стрелочки импульса Стохастика на основе пересечения линий K и D
-    // Вычисляем ширину напечатанного текста, чтобы поставить стрелку ровно после цифр
     float textW = app.textWidth(stochValues); 
-    float arrowX = 170 + textW + 8; // Смещение вправо от текста на 8 пикселей
-    
-    app.textSize(12); // Чуть уменьшим размер для аккуратности стрелки
+    float arrowX = 170 + textW + 8; 
+    app.textSize(12); 
     if (stoch.k > stoch.d + 0.5f) {
       app.fill(0, 255, 150); // Зеленый цвет для бычьего импульса
       app.text("▲", arrowX, y);

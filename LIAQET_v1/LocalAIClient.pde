@@ -87,8 +87,9 @@ class LocalAIClient {
         + "\"content\": \"" + escapeJson(prompt) + "\""
         + "}"
         + "],"
-        + "\"temperature\": 0.6,"
-        + "\"stream\": false"
+        + "\"temperature\": 0.3,"
+        + "\"stream\": false,"
+        + "\"thinking\": false"
         + "}";
 
       HttpRequest request = HttpRequest.newBuilder()
