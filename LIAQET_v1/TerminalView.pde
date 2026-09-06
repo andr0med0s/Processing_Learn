@@ -23,6 +23,7 @@ class TerminalView {
 
   // 0 = 30m/15m/5m, 1 = 4h/1h/30m
   public int timeframeMode = 0;
+  public int emaPeriod = 200; // Новая переменная состояния (по умолчанию 200)
 
   public int copyTimestamp = 0;
   public String aiAnalysisTime = "";
@@ -174,7 +175,8 @@ class TerminalView {
     app.fill(130, 145, 165); app.textSize(11); 
     app.text("(Интервал)", 45, 148);
     app.text("Lines %K / %D", 170, 148);
-    String currentEmaLabel = emaPeriodToggle.currentState == 0 ? "до EMA 200" : "до EMA 50";
+    // Динамический текст в зависимости от числового значения emaPeriod
+String currentEmaLabel = "до EMA " + emaPeriod; 
     app.text(currentEmaLabel, 310, 148);
     app.text("Mean Reversion", 460, 148);
 

@@ -11,7 +11,8 @@ class LocalAIClient {
   public boolean isThinking = false;
 
   // Метод теперь принимает пары: StochasticResult + EmaResult для каждого таймфрейма
-  public void analyzeDataAsync(PApplet app, String assetName, String ticker, String groupLabel,
+  // Добавлен параметр int emaPeriod в сигнатуру метода
+  public void analyzeDataAsync(PApplet app, String assetName, String ticker, String groupLabel, int emaPeriod,
       String label1, StochasticResult tf1, EmaResult ema1,
       String label2, StochasticResult tf2, EmaResult ema2,
       String label3, StochasticResult tf3, EmaResult ema3) {
@@ -19,22 +20,25 @@ class LocalAIClient {
     this.aiResponse = "ИИ изучает показатели таймфреймов...";
 
     // Форматируем комплексное описание (Стохастик + EMA) в человеческий текст
-    String row1 = formatMarketStateToText(app, label1, tf1, ema1);
-    String row2 = formatMarketStateToText(app, label2, tf2, ema2);
-    String row3 = formatMarketStateToText(app, label3, tf3, ema3);
+    // Передаем параметр периода в форматирование строк
+    String row1 = formatMarketStateToText(app, label1, tf1, ema1, emaPeriod);
+    String row2 = formatMarketStateToText(app, label2, tf2, ema2, emaPeriod);
+    String row3 = formatMarketStateToText(app, label3, tf3, ema3, emaPeriod);
 
     String prompt = "Привет! Проанализируй текущую рыночную ситуацию по инструменту " + assetName + " (" + ticker + ").\n"
-                  + "Мы используем стратегию Возврата к средней (Mean Reversion) для группы таймфреймов: " + groupLabel + ".\n\n"
-                  + "Вот текстовое описание текущего состояния рынка:\n"
-                  + "1. " + row1 + "\n"
-                  + "2. " + row2 + "\n"
-                  + "3. " + row3 + "\n\n"
-                  + "На основе этих данных напиши профессиональный аналитический обзор для трейдера на русском языке:\n"
-                  + "- Кратко интерпретируй ситуацию для каждого таймфрейма (по одному предложению).\n"
-                  + "- Оцени потенциал возврата цены к средней линии EMA 200 (натянута ли «резинка» отклонения).\n"
-                  + "- Проверь, согласуются ли сигналы Стохастика и отклонения цены между таймфреймами.\n"
-                  + "- В самом конце напиши финальную строчку строго в формате: «Итог: [Твое торговое решение]».\n\n"
-                  + "Пиши исключительно обычным связным текстом. Никакого программного кода или JSON структур.";
+                    + "Мы используем стратегию Возврата к средней (Mean Reversion) для группы таймфреймов: " + groupLabel + ".\n"
+                    + "В качестве базовой средней линии используется EMA " + emaPeriod + ".\n\n" // Передаем контекст периода
+                    + "Вот текстовое описание текущего состояния рынка:\n"
+                    + "1. " + row1 + "\n"
+                    + "2. " + row2 + "\n"
+                    + "3. " + row3 + "\n\n"
+                    + "На основе этих данных напиши профессиональный аналитический обзор для трейдера на русском языке:\n"
+                    + "- Кратко интерпретируй ситуацию для каждого таймфрейма (по одному предложению).\n"
+                    + "- Оцени потенциал возврата цены к средней линии EMA " + emaPeriod + " (натянута ли «резинка» отклонения).\n"
+                    + "- Проверь, согласуются ли сигналы Стохастика и отклонения цены между таймфреймами.\n"
+                    + "- В самом конце напиши финальную строчку строго в формате: «Итог: [Твое торговое решение]».\n\n"
+                    + "Пиши исключительно обычным связным текстом. Никакого программного кода или JSON структур.";
+
 
     new Thread(new Runnable() {
       public void run() {
@@ -44,7 +48,7 @@ class LocalAIClient {
   }
 
   // Переводим Стохастик и отклонение EMA в естественные предложения для финансовой модели
-  private String formatMarketStateToText(PApplet app, String label, StochasticResult stoch, EmaResult ema) {
+  private String formatMarketStateToText(PApplet app, String label, StochasticResult stoch, EmaResult ema, int emaPeriod) {
     if (stoch == null || stoch.isError || ema == null || ema.isError) {
       return "На таймфрейме " + label + " технические индикаторы временно недоступны.";
     }
@@ -62,8 +66,8 @@ class LocalAIClient {
     if (ema.trendDirection.equals("флэт")) trendText = "при этом линия средней находится в горизонтальном флэте, что идеально для Mean Reversion";
 
     return "На таймфрейме " + label + " осциллятор Стохастик " + zoneText + " (%K=" + app.nf(stoch.k, 1, 1) + ", %D=" + app.nf(stoch.d, 1, 1) + ", " + momentumText + "). "
-         + "Текущая цена отклонилась и находится " + emaPosition + " скользящей средней EMA 200 на " + app.nf(Math.abs(ema.distancePercent), 1, 2) + "%, "
-         + trendText + ".";
+        + "Текущая цена отклонилась и находится " + emaPosition + " скользящей средней EMA " + emaPeriod + " на " + app.nf(Math.abs(ema.distancePercent), 1, 2) + "%, "
+        + trendText + ".";
   }
 
   private String escapeJson(String text) {

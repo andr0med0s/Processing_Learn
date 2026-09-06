@@ -74,6 +74,24 @@ class UIController {
       // Клик по тоглу периода EMA (просто меняет состояние визуализации в рамках Демонстрации)
       if (ui.isAllDataLoaded() && ui.emaPeriodToggle.isHovered(mx, my)) {
         ui.emaPeriodToggle.toggleState();
+
+
+          // Меняем числовое состояние в зависимости от выбранного индекса тогла
+        ui.emaPeriod = (ui.emaPeriodToggle.currentState == 0) ? 200 : 50;
+
+          // Сбрасываем текущие расчеты EMA, чтобы показать индикатор загрузки
+        ui.tf5mEma = null;
+        ui.tf15mEma = null;
+        ui.tf30mEma = null;
+        ui.tf1hEma = null;
+        ui.tf4hEma = null;
+
+        // Сбрасываем статус ответа ИИ
+        ai.aiResponse = "Нажмите кнопку ниже, чтобы запустить анализ ИИ...";
+        ui.cpBtn.text = "Копировать ответ";
+
+        // Запускаем автоматический пересчет в фоновом потоке
+        app.thread("runAnalyticCalculation");
         return;
       }
 
@@ -86,10 +104,11 @@ class UIController {
           ui.aiAnalysisTime = "Расчет ИИ от: " + app.nf(app.day(), 2) + "." + app.nf(app.month(), 2) + "." + app.year() + " в " + app.nf(app.hour(), 2) + ":" + app.nf(app.minute(), 2) + ":" + app.nf(app.second(), 2);
           
           String modeLabel = ui.timeframeMode == 0 ? "скальпинг 30м / 15м / 5м" : "среднесрок 4ч / 1ч / 30м";
+          // блок клика по ui.aiBtn:
           if (ui.timeframeMode == 0) {
-            ai.analyzeDataAsync(app, ui.selectedAsset.name, ui.selectedAsset.ticker, modeLabel, "30 Минут (30m)", ui.tf30m, ui.tf30mEma, "15 Минут (15m)", ui.tf15m, ui.tf15mEma, "5 Минут (5m)", ui.tf5m, ui.tf5mEma);
+            ai.analyzeDataAsync(app, ui.selectedAsset.name, ui.selectedAsset.ticker, modeLabel, ui.emaPeriod, "30 Минут (30m)", ui.tf30m, ui.tf30mEma, "15 Минут (15m)", ui.tf15m, ui.tf15mEma, "5 Минут (5m)", ui.tf5m, ui.tf5mEma);
           } else {
-            ai.analyzeDataAsync(app, ui.selectedAsset.name, ui.selectedAsset.ticker, modeLabel, "4 Часа (4h)", ui.tf4h, ui.tf4hEma, "1 Час (1h)", ui.tf1h, ui.tf1hEma, "30 Минут (30m)", ui.tf30m, ui.tf30mEma);
+            ai.analyzeDataAsync(app, ui.selectedAsset.name, ui.selectedAsset.ticker, modeLabel, ui.emaPeriod, "4 Часа (4h)", ui.tf4h, ui.tf4hEma, "1 Час (1h)", ui.tf1h, ui.tf1hEma, "30 Минут (30m)", ui.tf30m, ui.tf30mEma);
           }
         }
       }

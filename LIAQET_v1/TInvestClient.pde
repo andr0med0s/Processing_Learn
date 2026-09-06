@@ -76,7 +76,8 @@ class TInvestClient {
   }
 
   // Метод теперь возвращает пакет индикаторов (Стохастик + EMA 200)
-  public IndicatorPackage fetchAndCalculate(String uid, String intervalStr, int daysAgo) {
+  // Изменяем сигнатуру (добавлен параметр int emaPeriod)
+  public IndicatorPackage fetchAndCalculate(String uid, String intervalStr, int daysAgo, int emaPeriod) {
     try {
       HttpClient client = createSecureClient();
       java.time.Instant toInstant = java.time.Instant.now();
@@ -118,7 +119,7 @@ class TInvestClient {
       
       // Рассчитываем Стохастик и EMA параллельно из одной выборки данных
       StochasticResult stoch = calculateStochastic533(candles);
-      EmaResult ema = calculateEMA(candles, 200); // Базовый тяжелый период для Mean Reversion
+      EmaResult ema = calculateEMA(candles, emaPeriod); // динамический период для Mean Reversion
       
       return new IndicatorPackage(stoch, ema);
     } catch (Exception e) {
