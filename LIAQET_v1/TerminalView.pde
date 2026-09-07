@@ -35,7 +35,7 @@ class TerminalView {
   public Button cpBtn;
   public Button refreshBtn;
   public Button favBtn;
-  private Button searchRedirectBtn;
+  public Button searchRedirectBtn;
 
   public TerminalView(PApplet app, TInvestClient broker, LocalAIClient ai) {
     this.app = app;

@@ -1,4 +1,5 @@
 // === ВКЛАДКА: LocalAIClient ===
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -20,25 +21,25 @@ class LocalAIClient {
     this.aiResponse = "ИИ изучает показатели таймфреймов...";
 
     // Форматируем комплексное описание (Стохастик + EMA) в человеческий текст
-    // Передаем параметр периода в форматирование строк
+    // Передаем параметр периода в форматирование строк    
     String row1 = formatMarketStateToText(app, label1, tf1, ema1, emaPeriod);
     String row2 = formatMarketStateToText(app, label2, tf2, ema2, emaPeriod);
     String row3 = formatMarketStateToText(app, label3, tf3, ema3, emaPeriod);
 
+    // Редактирование текста промпта — динамическая подстановка периода EMA
     String prompt = "Привет! Проанализируй текущую рыночную ситуацию по инструменту " + assetName + " (" + ticker + ").\n"
                     + "Мы используем стратегию Возврата к средней (Mean Reversion) для группы таймфреймов: " + groupLabel + ".\n"
-                    + "В качестве базовой средней линии используется EMA " + emaPeriod + ".\n\n" // Передаем контекст периода
+                    + "В качестве базовой средней линии используется скользящая средняя EMA " + emaPeriod + ".\n\n" 
                     + "Вот текстовое описание текущего состояния рынка:\n"
                     + "1. " + row1 + "\n"
                     + "2. " + row2 + "\n"
                     + "3. " + row3 + "\n\n"
                     + "На основе этих данных напиши профессиональный аналитический обзор для трейдера на русском языке:\n"
                     + "- Кратко интерпретируй ситуацию для каждого таймфрейма (по одному предложению).\n"
-                    + "- Оцени потенциал возврата цены к средней линии EMA " + emaPeriod + " (натянута ли «резинка» отклонения).\n"
+                    + "- Оцени потенциал возврата цены к средней линии EMA " + emaPeriod + " (натянута ли «резинка» отклонения с учетом того, что это " + (emaPeriod == 200 ? "тяжелый трендовый" : "быстрый локальный") + " период).\n"
                     + "- Проверь, согласуются ли сигналы Стохастика и отклонения цены между таймфреймами.\n"
                     + "- В самом конце напиши финальную строчку строго в формате: «Итог: [Твое торговое решение]».\n\n"
                     + "Пиши исключительно обычным связным текстом. Никакого программного кода или JSON структур.";
-
 
     new Thread(new Runnable() {
       public void run() {
@@ -47,7 +48,7 @@ class LocalAIClient {
     }).start();
   }
 
-  // Переводим Стохастик и отклонение EMA в естественные предложения для финансовой модели
+  // метод formatMarketStateToText с подстановкой EMA периода
   private String formatMarketStateToText(PApplet app, String label, StochasticResult stoch, EmaResult ema, int emaPeriod) {
     if (stoch == null || stoch.isError || ema == null || ema.isError) {
       return "На таймфрейме " + label + " технические индикаторы временно недоступны.";
@@ -114,35 +115,26 @@ class LocalAIClient {
               JSONObject firstChoice = choices.getJSONObject(0);
               if (firstChoice != null && !firstChoice.isNull("message")) {
                 JSONObject message = firstChoice.getJSONObject("message");
-                
                 // 1. Пытаемся взять основной чистовой ответ
                 String content = message.hasKey("content") ? message.getString("content", "").trim() : "";
-                
                 // 2. Пытаемся взять внутренние глубокие рассуждения ИИ (если они есть)
                 String reasoning = message.hasKey("reasoning_content") ? message.getString("reasoning_content", "").trim() : "";
-                
-                String finalOutput = "";
-                
+                String finalOutput = !content.isEmpty() ? content : reasoning;
+
+                // Выводим в консоль источник данных для контроля работы LM Studio
                 if (!content.isEmpty()) {
-                  // Если есть чистовик — берем его
-                  finalOutput = content;
                   System.out.println("[УСПЕХ ИИ] Получен стандартный ответ из поля content.");
                 } else if (!reasoning.isEmpty()) {
-                  // Если чистовик пуст, но ИИ расписал логику в рассуждениях — спасаем эти данные!
-                  finalOutput = reasoning;
                   System.out.println("[УСПЕХ ИИ] Поле content пустое. Успешно перехвачен черновик reasoning_content!");
                 }
                 
                 if (!finalOutput.isEmpty()) {
-                  // Мягкая очистка от внешних кавычек
                   if (finalOutput.startsWith("\"") && finalOutput.endsWith("\"") && finalOutput.length() > 1) {
                     finalOutput = finalOutput.substring(1, finalOutput.length() - 1).trim();
                   }
-                  
-                  // Передаем итоговый текст в интерфейс терминала
                   aiResponse = finalOutput;
                 } else {
-                  aiResponse = "Предупреждение: ИИ выполнил расчет, но вернул пустые поля ответов. Попробуйте еще раз.";
+                  aiResponse = "Предупреждение: ИИ вернул пустой ответ. Попробуйте еще раз.";
                 }
               }
             }

@@ -43,30 +43,31 @@ void runNetworkSearch() {
 }
 
 void runAnalyticCalculation() {
-  String uid = ui.selectedAsset.uid;
-  int period = ui.emaPeriod; // Получаем текущий выбранный период (50 или 200)
-  
-  // Запрашиваем данные и распределяем Стохастик и EMA по переменным интерфейса
-  // Передаем период третьим параметром в fetchAndCalculate
-  IndicatorPackage pack5m = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_5_MIN", 4, period); // увеличили до 4 дней для EMA
-  ui.tf5m = pack5m.stoch;
-  ui.tf5mEma = pack5m.ema;
-  
-  IndicatorPackage pack15m = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_15_MIN", 6, period); // увеличили до 6 дней
-  ui.tf15m = pack15m.stoch;
-  ui.tf15mEma = pack15m.ema;
-  
-  IndicatorPackage pack30m = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_30_MIN", 10, period); // увеличили до 10 дней
-  ui.tf30m = pack30m.stoch;
-  ui.tf30mEma = pack30m.ema;
-  
-  IndicatorPackage pack1h = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_HOUR", 15, period); // увеличили до 15 дней
-  ui.tf1h = pack1h.stoch;
-  ui.tf1hEma = pack1h.ema;
-  
-  IndicatorPackage pack4h = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_4_HOUR", 45, period); // увеличили до 45 дней для полноценной EMA 200
-  ui.tf4h = pack4h.stoch;
-  ui.tf4hEma = pack4h.ema;
+  final String uid = ui.selectedAsset.uid;
+  final int period = ui.emaPeriod; 
+
+  // Единый фоновый поток для сетевых операций
+  new Thread(new Runnable() {
+    public void run() {
+      println("[Аналитический поток] Старт загрузки и расчета данных...");
+      
+      // Локальные пакеты во избежание промежуточных NPE в UI-потоке
+      IndicatorPackage pack5m = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_5_MIN", 4, period);
+      IndicatorPackage pack15m = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_15_MIN", 6, period);
+      IndicatorPackage pack30m = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_30_MIN", 10, period);
+      IndicatorPackage pack1h = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_HOUR", 15, period);
+      IndicatorPackage pack4h = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_4_HOUR", 45, period);
+      
+      // Атомарно (одновременно) присваиваем ссылки для UI
+      ui.tf5m = pack5m.stoch;     ui.tf5mEma = pack5m.ema;
+      ui.tf15m = pack15m.stoch;   ui.tf15mEma = pack15m.ema;
+      ui.tf30m = pack30m.stoch;   ui.tf30mEma = pack30m.ema;
+      ui.tf1h = pack1h.stoch;     ui.tf1hEma = pack1h.ema;
+      ui.tf4h = pack4h.stoch;     ui.tf4hEma = pack4h.ema;
+      
+      println("[Аналитический поток] Все индикаторы успешно обновлены.");
+    }
+  }).start();
 }
 
 

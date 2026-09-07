@@ -19,7 +19,8 @@ class UIController {
   public void handleMousePress(float mx, float my) {
     // 1. ЛОГИКА ЭКРАНА ИЗБРАННОГО
     if (ui.currentScreen == TerminalView.SCREEN_FAVORITES) {
-      if (ui.tfToggle.isHovered(mx, my)) { // Использование общего метода для перехода к поиску
+      // ИСПРАВЛЕНО: Проверяем клик именно по кнопке searchRedirectBtn, а не по tfToggle
+      if (ui.searchRedirectBtn.isHovered(mx, my)) { 
         ui.currentScreen = TerminalView.SCREEN_SEARCH;
         ui.setInputText("");
         return;
@@ -39,6 +40,7 @@ class UIController {
         }
       }
     }
+
 
     // 2. ЛОГИКА ЭКРАНА ПОИСКА
     else if (ui.currentScreen == TerminalView.SCREEN_SEARCH) {
@@ -125,7 +127,7 @@ class UIController {
 
       // Клик по кнопке "Обновить данные"
       if (ui.refreshBtn.isHovered(mx, my)) {
-        ui.tf4h = null; ui.tf1h = null; ui.tf30m = null; ui.tf15m = null; ui.tf5m = null;
+        // Не зануляем UI ссылки, чтобы избежать NPE в draw, поток перезапишет их атомарно
         app.thread("runAnalyticCalculation");
       }
     }
