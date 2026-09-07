@@ -101,3 +101,9 @@ void createDefaultConfig() {
     e.printStackTrace();
   }
 }
+
+void mouseWheel(MouseEvent event) {
+  float count = event.getCount();
+  controller.handleMouseWheel(count);
+}
+

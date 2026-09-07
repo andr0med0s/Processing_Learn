@@ -8,6 +8,9 @@ class TerminalView {
   private TInvestClient broker;
   private LocalAIClient ai;
 
+  public float aiScrollY = 0; // Текущая прокрутка текста ИИ по вертикали
+
+
   public static final int SCREEN_FAVORITES = 0;
   public static final int SCREEN_SEARCH = 1;
   public static final int SCREEN_ANALYTICS = 2;
@@ -200,6 +203,11 @@ String currentEmaLabel = "до EMA " + emaPeriod;
       cpBtn.text = "Копировать ответ";
     }
 
+        // Если ИИ начал думать — сбрасываем скролл на 0
+    if (ai.isThinking) {
+      aiScrollY = 0;
+    }
+
     // Изменение текста кнопки в зависимости от состояния ИИ
     aiBtn.text = ai.isThinking ? "Анализ..." : "Робот-Аналитик";
 
@@ -213,8 +221,24 @@ String currentEmaLabel = "до EMA " + emaPeriod;
       app.text(aiAnalysisTime, 30, 362);
     }
 
-    app.fill(225); app.textSize(13);
-    app.text(ai.aiResponse, 30, 380, app.width - 60, 330); 
+// === НАЧАЛО БЛОКА СКРОЛЛИРУЕМОГО ТЕКСТА ИИ ===
+    app.fill(225); 
+    app.textSize(13);
+    
+    float boxX = 30;
+    float boxY = 380;
+    float boxW = app.width - 60;
+    float boxH = 330;
+    
+    // Включаем маску, чтобы текст за пределами прямоугольника не отрисовывался
+    app.clip(boxX, boxY, boxW, boxH);
+    
+    // Рисуем текст со смещением на aiScrollY
+    app.text(ai.aiResponse, boxX, boxY + aiScrollY, boxW, 2000); 
+    
+    // Выключаем маску, чтобы не ломать отрисовку остальных экранов
+    app.noClip();
+    // === КОНЕЦ БЛОКА СКРОЛЛИРУЕМОГО ТЕКСТА ИИ ===
   }
 
   private void renderRow(String title, StochasticResult stoch, EmaResult ema, float y) {

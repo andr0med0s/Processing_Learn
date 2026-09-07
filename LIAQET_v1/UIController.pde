@@ -140,6 +140,7 @@ class UIController {
         ui.tf4hEma = null; ui.tf1hEma = null; ui.tf30mEma = null; ui.tf15mEma = null; ui.tf5mEma = null;
         ui.cpBtn.text = "Копировать ответ";
         
+        ui.aiScrollY = 0; // Сброс скролла при выходе из аналитики
         ui.currentScreen = TerminalView.SCREEN_FAVORITES;
         ui.timeframeMode = 0;
         ui.tfToggle.currentState = 0;
@@ -182,6 +183,25 @@ class UIController {
         if (ui.getInputText().trim().length() > 0) app.thread("runNetworkSearch");
       } else if (keyChar != app.CODED && keyChar != app.ESC) {
         if (ui.getInputText().length() < 12) ui.setInputText(ui.getInputText() + Character.toUpperCase(keyChar));
+      }
+    }
+  }
+    public void handleMouseWheel(float count) {
+    if (ui.currentScreen == TerminalView.SCREEN_ANALYTICS) {
+      // Проверяем, находится ли мышь в зоне текстового блока ИИ
+      if (app.mouseX >= 30 && app.mouseX <= app.width - 30 && app.mouseY >= 380 && app.mouseY <= 710) {
+        // Скорость скролла (15 пикселей за один щелчок колесика)
+        ui.aiScrollY -= count * 15; 
+        
+        // Ограничиваем скролл «наверх» (чтобы текст не улетал вниз)
+        if (ui.aiScrollY > 0) {
+          ui.aiScrollY = 0;
+        }
+        
+        // Ограничиваем скролл «вниз» (примерный лимит, чтобы не листать в бесконечную пустоту)
+        if (ui.aiScrollY < -1500) {
+          ui.aiScrollY = -1500;
+        }
       }
     }
   }
