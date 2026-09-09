@@ -25,8 +25,10 @@ void setup() {
   controller = new UIController(this, broker, ui, ai);
 
   // Сброс кэша оперативной памяти для гарантированного обновления списков
-  ui.favManager.list.clear();     
-  broker.foundInstruments.clear(); 
+  // === ПРАВИЛЬНЫЙ СБРОС КЭША ПРИ СТАРТЕ ===
+  // Строку ui.favManager.list.clear(); ОТСЮДА ПОЛНОСТЬЮ УДАЛЯЕМ!
+  
+  broker.foundInstruments.clear(); // Оставляем только очистку результатов старого поиска
 }
 
 void draw() {
