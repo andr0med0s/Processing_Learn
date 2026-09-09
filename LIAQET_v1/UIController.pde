@@ -1,5 +1,6 @@
-//**********************************************************************
+//*********************************
 // 8 === ВКЛАДКА: UIController ===
+
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 
@@ -59,20 +60,26 @@ class UIController {
       else if (ui.isAllDataLoaded() && ui.emaPeriodToggle.isHovered(mx, my)) {
         ui.emaPeriodToggle.toggleState();
         ui.emaPeriod = (ui.emaPeriodToggle.currentState == 0) ? 200 : 50;
-        clearEmaCache(); 
+        clearAllCache(); // Полная очистка кэша при смене периода
         resetAIStatus();
         app.thread("runAnalyticCalculation");
       } 
-      // Клик по кнопке "Робот-Аналитик"
+      // Клик по кнопке "Робот-Аналитик" с пробросом MFI Divergence v2
       else if (ui.isAllDataLoaded() && ui.aiBtn.isHovered(mx, my) && !ai.isThinking) {
         ui.cpBtn.text = "Копировать ответ";
         ui.aiAnalysisTime = "Расчет ИИ от: " + app.nf(app.day(), 2) + "." + app.nf(app.month(), 2) + "." + app.year() + " в " + app.nf(app.hour(), 2) + ":" + app.nf(app.minute(), 2) + ":" + app.nf(app.second(), 2);
         String grp = ui.timeframeMode == 0 ? "скальпинг 30м / 15м / 5м" : "среднесрок 4ч / 1ч / 30м";
         
         if (ui.timeframeMode == 0) {
-          ai.analyzeDataAsync(app, ui.selectedAsset.name, ui.selectedAsset.ticker, grp, ui.emaPeriod, "30 Минут (30m)", ui.tf30m, ui.tf30mEma, "15 Минут (15m)", ui.tf15m, ui.tf15mEma, "5 Минут (5m)", ui.tf5m, ui.tf5mEma);
+          ai.analyzeDataAsync(app, ui.selectedAsset.name, ui.selectedAsset.ticker, grp, ui.emaPeriod, 
+                              "30 Минут (30m)", ui.tf30m, ui.tf30mEma, ui.tf30mMfi, 
+                              "15 Минут (15m)", ui.tf15m, ui.tf15mEma, ui.tf15mMfi, 
+                              "5 Минут (5m)", ui.tf5m, ui.tf5mEma, ui.tf5mMfi);
         } else {
-          ai.analyzeDataAsync(app, ui.selectedAsset.name, ui.selectedAsset.ticker, grp, ui.emaPeriod, "4 Часа (4h)", ui.tf4h, ui.tf4hEma, "1 Час (1h)", ui.tf1h, ui.tf1hEma, "30 Минут (30m)", ui.tf30m, ui.tf30mEma);
+          ai.analyzeDataAsync(app, ui.selectedAsset.name, ui.selectedAsset.ticker, grp, ui.emaPeriod, 
+                              "4 Часа (4h)", ui.tf4h, ui.tf4hEma, ui.tf4hMfi, 
+                              "1 Час (1h)", ui.tf1h, ui.tf1hEma, ui.tf1hMfi, 
+                              "30 Минут (30m)", ui.tf30m, ui.tf30mEma, ui.tf30mMfi);
         }
       } 
       // Клик по кнопке "Копировать ответ"
@@ -103,16 +110,18 @@ class UIController {
     ui.cpBtn.text = "Копировать ответ"; 
   }
   
-  private void clearEmaCache() { 
+  // Железобетонная очистка оперативной памяти от старых индикаторов
+  private void clearAllCache() { 
+    ui.tf5m = null;    ui.tf15m = null;    ui.tf30m = null;    ui.tf1h = null;    ui.tf4h = null; 
     ui.tf5mEma = null; ui.tf15mEma = null; ui.tf30mEma = null; ui.tf1hEma = null; ui.tf4hEma = null; 
+    ui.tf5mMfi = null; ui.tf15mMfi = null; ui.tf30mMfi = null; ui.tf1hMfi = null; ui.tf4hMfi = null; 
   }
 
   // Обработка ввода с клавиатуры
   public void handleKeyPress(char keyChar, int keyCode) {
     if (ui.currentScreen == TerminalView.SCREEN_ANALYTICS) {
       if (keyChar == app.BACKSPACE || keyCode == app.ESC) {
-        clearEmaCache(); 
-        ui.tf4h = null; ui.tf1h = null; ui.tf30m = null; ui.tf15m = null; ui.tf5m = null;
+        clearAllCache(); // Стираем кэш, чтобы разгрузить UI при выходе
         ui.cpBtn.text = "Копировать ответ"; 
         ui.aiScrollY = 0; 
         ui.currentScreen = TerminalView.SCREEN_FAVORITES;

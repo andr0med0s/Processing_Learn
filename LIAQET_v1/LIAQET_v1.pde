@@ -62,7 +62,7 @@ void runAnalyticCalculation() {
     public void run() {
       println("[Аналитический поток] Старт загрузки для типа [" + type + "]...");
       
-      int d5m = 1, d15m = 1, d30m = 1, d1h = 7, d4h = 30; // Безопасные интервалы во избежание HTTP 400
+      int d5m = 1, d15m = 3, d30m = 4, d1h = 7, d4h = 45; // Безопасные интервалы во избежание HTTP 400
       
       if (type.contains("share")) {
         println("[Аналитический поток] Распознана акция. Применяем эталонные интервалы.");
@@ -76,12 +76,19 @@ void runAnalyticCalculation() {
       IndicatorPackage pack1h  = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_HOUR", d1h, period, ui.selectedAsset.ticker);
       IndicatorPackage pack4h  = broker.fetchAndCalculate(uid, "CANDLE_INTERVAL_4_HOUR", d4h, period, ui.selectedAsset.ticker);
       
-      // Атомарное обновление UI-ссылок
+      // Атомарное обновление UI-ссылок (Стохастик + EMA)
       ui.tf5m = pack5m.stoch;     ui.tf5mEma = pack5m.ema;
       ui.tf15m = pack15m.stoch;   ui.tf15mEma = pack15m.ema;
       ui.tf30m = pack30m.stoch;   ui.tf30mEma = pack30m.ema;
       ui.tf1h = pack1h.stoch;     ui.tf1hEma = pack1h.ema;
       ui.tf4h = pack4h.stoch;     ui.tf4hEma = pack4h.ema;
+      
+      // И пробрасываем результаты расчетов MFI Divergence v2 на визуальный слой терминала
+      ui.tf5mMfi  = pack5m.mfi;
+      ui.tf15mMfi = pack15m.mfi;
+      ui.tf30mMfi = pack30m.mfi;
+      ui.tf1hMfi  = pack1h.mfi;
+      ui.tf4hMfi  = pack4h.mfi;
       
       println("[Аналитический поток] Все индикаторы успешно обновлены.");
     }

@@ -1,9 +1,11 @@
-//**********************************************************************
+//*******************************
 // 2 === ВКЛАДКА: DataModels ===
 
 class Candle {
-  float high, low, close;
-  Candle(float h, float l, float c) { this.high = h; this.low = l; this.close = c; }
+  float high, low, close, volume; // Добавили объем для расчета MFI
+  Candle(float h, float l, float c, float v) { 
+    this.high = h; this.low = l; this.close = c; this.volume = v; 
+  }
 }
 
 class StochasticResult {
@@ -21,6 +23,18 @@ class EmaResult {
   EmaResult(float value, float distancePercent, String trendDirection) {
     this.value = value; this.distancePercent = distancePercent;
     this.trendDirection = trendDirection; this.isError = false;
+  }
+}
+
+// Новый класс для хранения результатов MFI и TradingView-дивергенций
+class MfiResult {
+  float value;
+  String divergenceType; // "BULLISH" (бычья), "BEARISH" (медвежья) или "NONE"
+  boolean isError;
+  
+  MfiResult() { this.isError = true; this.divergenceType = "NONE"; }
+  MfiResult(float value, String divType) { 
+    this.value = value; this.divergenceType = divType; this.isError = false; 
   }
 }
 
@@ -51,8 +65,12 @@ class InstrumentItem {
   boolean isHovered(float mx, float my) { return (mx > x && mx < x + w && my > y && my < y + h); }
 }
 
+// Расширили пакет, добавив MfiResult к остальным индикаторам
 class IndicatorPackage {
   StochasticResult stoch;
   EmaResult ema;
-  IndicatorPackage(StochasticResult s, EmaResult e) { this.stoch = s; this.ema = e; }
+  MfiResult mfi; 
+  IndicatorPackage(StochasticResult s, EmaResult e, MfiResult m) { 
+    this.stoch = s; this.ema = e; this.mfi = m; 
+  }
 }
